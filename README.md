@@ -2,6 +2,8 @@
 
 A full-stack system for tracking a job search: a React dashboard, a FastAPI backend, and a Chrome extension that captures jobs from LinkedIn and Indeed and logs applications automatically. Built to manage my own job search.
 
+**Live demo: https://job-tracker-ao85.onrender.com**: sign up with any email to try it. <sub>(Free hosting sleeps when idle, so the first load can take up to a minute.)</sub>
+
 **Stack:** Python · FastAPI · SQLAlchemy · PostgreSQL / SQLite · JWT auth · React (Vite) · Chrome Extension (Manifest V3) · Docker · Render · pytest · node:test
 
 ![Job Tracker board with applications across Wishlist, Applied, Interview, Offer and Rejected](docs/board.png)
