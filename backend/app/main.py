@@ -7,8 +7,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from . import models, schemas
-from .database import Base, engine, get_db
+from datetime import date
+
+from . import schemas
+from .database import engine, ensure_schema, get_db
 from .models import Application, Status, User
 from .security import (
     create_access_token,
@@ -16,11 +18,21 @@ from .security import (
     hash_password,
     verify_password,
 )
+from .urls import normalize_url
+
+# Pipeline order. Automatic captures may only move a job forward, never back.
+STATUS_RANK = {
+    Status.wishlist: 0,
+    Status.applied: 1,
+    Status.interview: 2,
+    Status.offer: 3,
+    Status.rejected: 3,
+}
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    Base.metadata.create_all(bind=engine)  # fine for a small app; use Alembic migrations if it grows
+    ensure_schema(engine)
     yield
 
 
@@ -141,10 +153,90 @@ def create_application(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    obj = Application(**payload.model_dump(), user_id=user.id)
+    data = payload.model_dump()
+    data["url"] = normalize_url(data["url"])
+    obj = Application(**data, user_id=user.id)
     db.add(obj)
     db.commit()
     return obj
+
+
+def _find_by_url(db: Session, user: User, url: str | None) -> Application | None:
+    if not url:
+        return None
+    return db.scalar(
+        select(Application)
+        .where(Application.user_id == user.id, Application.url == url)
+        .order_by(Application.id)
+        .limit(1)
+    )
+
+
+@app.get("/api/applications/lookup", response_model=schemas.ApplicationOut)
+def lookup_application(
+    url: str = Query(min_length=1, max_length=500),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Is this posting already tracked? Used by the extension popup."""
+    obj = _find_by_url(db, user, normalize_url(url))
+    if obj is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not tracked")
+    return obj
+
+
+@app.post("/api/applications/capture", response_model=schemas.CaptureResult)
+def capture_application(
+    payload: schemas.ApplicationCapture,
+    response: Response,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Create-or-update by URL. Safe to call repeatedly for the same posting.
+
+    - New URL: create it (with today's date if it's being marked applied).
+    - Known URL: only move the status forward, fill in blanks, and never overwrite
+      fields the user may have edited by hand (company, title, notes).
+    """
+    url = normalize_url(payload.url)
+    new_status = Status(payload.status)
+    applied_on = payload.applied_on or date.today()
+    obj = _find_by_url(db, user, url)
+
+    if obj is None:
+        obj = Application(
+            user_id=user.id,
+            url=url,
+            company=payload.company.strip(),
+            title=payload.title.strip(),
+            status=new_status,
+            location=payload.location,
+            remote=bool(payload.remote),
+            source=payload.source,
+            applied_on=applied_on if new_status == Status.applied else None,
+        )
+        db.add(obj)
+        db.commit()
+        response.status_code = status.HTTP_201_CREATED
+        return schemas.CaptureResult(application=obj, created=True, changed=True)
+
+    changed = False
+    if STATUS_RANK[new_status] > STATUS_RANK[obj.status]:
+        obj.status = new_status
+        changed = True
+    if new_status == Status.applied and obj.applied_on is None:
+        obj.applied_on = applied_on
+        changed = True
+    for field in ("location", "source"):
+        if getattr(obj, field) is None and getattr(payload, field):
+            setattr(obj, field, getattr(payload, field))
+            changed = True
+    if payload.remote and not obj.remote:
+        obj.remote = True
+        changed = True
+    if changed:
+        db.commit()
+    return schemas.CaptureResult(application=obj, created=False, changed=changed)
 
 
 @app.get("/api/applications/{app_id}", response_model=schemas.ApplicationOut)
@@ -166,6 +258,8 @@ def update_application(
     for field, value in payload.model_dump(exclude_unset=True).items():
         if value is None and field in {"company", "title", "status", "remote"}:
             raise HTTPException(422, f"{field} cannot be null")
+        if field == "url":
+            value = normalize_url(value)
         setattr(obj, field, value)
     db.commit()
     return obj

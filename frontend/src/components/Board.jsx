@@ -33,6 +33,7 @@ export default function Board({ applications, onEdit, onMove }) {
                   <span>{a.company}</span>
                 </button>
                 <div className="tags">
+                  {a.source && <span className="tag source">{a.source}</span>}
                   {a.remote && <span className="tag">Remote</span>}
                   {a.location && <span className="tag">{a.location}</span>}
                   {a.applied_on && <span className="tag">{a.applied_on}</span>}

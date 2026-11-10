@@ -1,0 +1,39 @@
+:root {
+  --bg: #ffffff;
+  --text: #1c2330;
+  --muted: #667085;
+  --border: #dde1e8;
+  --accent: #2f5bea;
+  --warn: #f59e0b;
+  --error: #c0392b;
+  --ok: #12b76a;
+  font: 14px system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1b2029; --text: #e8ebf0; --muted: #98a2b3; --border: #2d3441; --accent: #6c8cff; --error: #ff6b5c; }
+}
+body { width: 320px; margin: 0; padding: 12px; display: grid; gap: 10px; }
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+header span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+form { display: grid; gap: 8px; margin: 0; }
+label { display: grid; gap: 3px; font-size: 12px; color: var(--muted); }
+label.check { display: flex; align-items: center; gap: 6px; color: var(--text); font-size: 13px; }
+input, button { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px; }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+label.check input { width: auto; }
+button { cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.link { border: none; padding: 0; background: none; color: var(--accent); font-size: 12px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.muted { color: var(--muted); margin: 0; }
+.small { font-size: 11px; word-break: break-all; }
+.note { margin: 0; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--border); font-size: 12px; }
+.note.warn { border-color: var(--warn); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.note.warn[hidden] { display: none; }
+#message { margin: 0; font-size: 13px; }
+#message.ok { color: var(--ok); }
+#message.error { color: var(--error); }
+footer { display: flex; gap: 14px; }

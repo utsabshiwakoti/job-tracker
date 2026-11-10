@@ -42,7 +42,8 @@ class Application(Base):
     status: Mapped[Status] = mapped_column(Enum(Status), default=Status.wishlist, index=True)
     location: Mapped[str | None] = mapped_column(String(200), default=None)
     remote: Mapped[bool] = mapped_column(Boolean, default=False)
-    url: Mapped[str | None] = mapped_column(String(500), default=None)
+    url: Mapped[str | None] = mapped_column(String(500), default=None, index=True)
+    source: Mapped[str | None] = mapped_column(String(50), default=None)  # linkedin, indeed, manual…
     salary_note: Mapped[str | None] = mapped_column(String(100), default=None)
     notes: Mapped[str | None] = mapped_column(Text, default=None)
     applied_on: Mapped[date | None] = mapped_column(Date, default=None)

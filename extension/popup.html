@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Job Tracker</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <strong>Job Tracker</strong>
+      <span id="who" class="muted"></span>
+    </header>
+
+    <!-- Logged out -->
+    <form id="login" hidden>
+      <p class="muted">Log in with your Job Tracker account.</p>
+      <label>Email <input name="email" type="email" required autocomplete="email" /></label>
+      <label>Password <input name="password" type="password" required autocomplete="current-password" /></label>
+      <button class="primary">Log in</button>
+    </form>
+
+    <!-- Logged in -->
+    <form id="job" hidden>
+      <p id="tracked" class="note" hidden></p>
+      <label>Job title <input name="title" required maxlength="200" /></label>
+      <label>Company <input name="company" required maxlength="200" /></label>
+      <label>Location <input name="location" maxlength="200" /></label>
+      <label class="check"><input name="remote" type="checkbox" /> Remote</label>
+      <p id="url" class="muted small"></p>
+      <div class="row">
+        <button type="submit" name="status" value="wishlist">Save to Wishlist</button>
+        <button type="submit" name="status" value="applied" class="primary">I applied today</button>
+      </div>
+    </form>
+
+    <p id="notJob" class="muted" hidden>Open a job posting to save it.</p>
+    <p id="message" role="status" hidden></p>
+
+    <div id="queue" class="note warn" hidden>
+      <span id="queueText"></span>
+      <button id="retry" type="button">Sync now</button>
+    </div>
+
+    <footer>
+      <button id="open" type="button" class="link">Open tracker</button>
+      <button id="toggleSettings" type="button" class="link">Settings</button>
+      <button id="logout" type="button" class="link" hidden>Log out</button>
+    </footer>
+
+    <form id="settings" hidden>
+      <label>API URL <input name="apiBase" type="url" required /></label>
+      <label>Tracker URL <input name="appBase" type="url" required /></label>
+      <button>Save settings</button>
+    </form>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

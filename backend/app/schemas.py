@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -33,10 +34,30 @@ class ApplicationBase(BaseModel):
     salary_note: str | None = Field(default=None, max_length=100)
     notes: str | None = None
     applied_on: date | None = None
+    source: str | None = Field(default=None, max_length=50)
 
 
 class ApplicationCreate(ApplicationBase):
     pass
+
+
+class ApplicationCapture(BaseModel):
+    """Sent by the browser extension. Upserts by URL, so it is safe to send more than once."""
+
+    url: str = Field(min_length=1, max_length=500)
+    company: str = Field(min_length=1, max_length=200)
+    title: str = Field(min_length=1, max_length=200)
+    status: Literal["wishlist", "applied"] = "wishlist"
+    location: str | None = Field(default=None, max_length=200)
+    remote: bool | None = None
+    source: str | None = Field(default=None, max_length=50)
+    applied_on: date | None = None  # the client's local date; server uses today if missing
+
+
+class CaptureResult(BaseModel):
+    application: "ApplicationOut"
+    created: bool
+    changed: bool
 
 
 class ApplicationUpdate(BaseModel):
@@ -51,6 +72,7 @@ class ApplicationUpdate(BaseModel):
     salary_note: str | None = Field(default=None, max_length=100)
     notes: str | None = None
     applied_on: date | None = None
+    source: str | None = Field(default=None, max_length=50)
 
 
 class ApplicationOut(ApplicationBase):
@@ -66,3 +88,6 @@ class Stats(BaseModel):
     by_status: dict[str, int]
     response_rate: float  # share of submitted applications that reached interview/offer/rejected
     interview_rate: float  # share of submitted applications that reached interview/offer
+
+
+CaptureResult.model_rebuild()  # resolve the forward reference to ApplicationOut
