@@ -1,5 +1,8 @@
 import { STATUSES } from '../constants'
 
+const SOURCE_LABELS = { linkedin: 'LinkedIn', indeed: 'Indeed' }
+const sourceLabel = (s) => SOURCE_LABELS[s] || s
+
 // Kanban-style board. Cards can be dragged between columns (HTML5 drag and drop),
 // and the status <select> on each card is the keyboard/touch-friendly alternative.
 export default function Board({ applications, onEdit, onMove }) {
@@ -33,8 +36,9 @@ export default function Board({ applications, onEdit, onMove }) {
                   <span>{a.company}</span>
                 </button>
                 <div className="tags">
-                  {a.source && <span className="tag source">{a.source}</span>}
-                  {a.remote && <span className="tag">Remote</span>}
+                  {a.source && <span className="tag source">{sourceLabel(a.source)}</span>}
+                  {/* skip the Remote tag when the location already says so ("Remote (Canada)") */}
+                  {a.remote && !/remote/i.test(a.location || '') && <span className="tag">Remote</span>}
                   {a.location && <span className="tag">{a.location}</span>}
                   {a.applied_on && <span className="tag">{a.applied_on}</span>}
                 </div>

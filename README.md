@@ -4,7 +4,20 @@ A full-stack system for tracking a job search: a React dashboard, a FastAPI back
 
 **Stack:** Python · FastAPI · SQLAlchemy · SQLite · JWT auth · React (Vite) · Chrome Extension (Manifest V3) · pytest · node:test
 
-<!-- Add a screenshot here: ![Board view](docs/board.png) -->
+![Job Tracker board with applications across Wishlist, Applied, Interview, Offer and Rejected](docs/board.png)
+
+<table>
+  <tr>
+    <td><img src="docs/edit.png" alt="Editing an application: status, date applied, location, pay, posting URL and notes" /></td>
+    <td><img src="docs/board-dark.png" alt="The board in dark mode" /></td>
+  </tr>
+  <tr>
+    <td align="center">Edit an application</td>
+    <td align="center">Follows the system dark mode</td>
+  </tr>
+</table>
+
+<sub>Screenshots use sample data from fictional companies.</sub>
 
 ```
  LinkedIn / Indeed page ──► content script ──► extension service worker ──► FastAPI ──► SQLite
