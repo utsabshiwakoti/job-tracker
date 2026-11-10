@@ -34,6 +34,10 @@ A full-stack system for tracking a job search: a React dashboard, a FastAPI back
 
 You need Python 3.11+ and Node 20+.
 
+**Quick start (Windows):** `powershell -ExecutionPolicy Bypass -File start.ps1` sets everything up on first run and opens the API and dashboard in their own windows.
+
+Or start each part by hand:
+
 ```powershell
 # 1. API (terminal 1)
 cd backend
