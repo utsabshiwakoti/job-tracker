@@ -1,13 +1,14 @@
 import os
 from contextlib import asynccontextmanager
+from datetime import date
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
-
-from datetime import date
 
 from . import schemas
 from .database import engine, ensure_schema, get_db
@@ -272,3 +273,32 @@ def delete_application(
     db.delete(_get_owned(db, app_id, user))
     db.commit()
     return Response(status_code=204)
+
+
+# ---------- front end ----------
+
+
+def mount_frontend(application: FastAPI, directory: str | Path) -> None:
+    """Serve the built React app (frontend/dist) from the same origin as the API.
+
+    One service and one URL in production, so no CORS setup. Unknown paths fall back to
+    index.html so a page refresh never 404s. Must be called after the API routes are
+    registered, because this catch-all route would otherwise shadow them.
+    """
+    root = Path(directory).resolve()
+    index = root / "index.html"
+
+    @application.get("/{path:path}", include_in_schema=False)
+    def frontend(path: str):
+        if path.startswith("api/"):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+        candidate = (root / path).resolve()
+        if path and candidate.is_file() and candidate.is_relative_to(root):  # no ../ escapes
+            # Vite puts a content hash in every file name under assets/, so they never change.
+            cache = "public, max-age=31536000, immutable" if path.startswith("assets/") else "no-cache"
+            return FileResponse(candidate, headers={"Cache-Control": cache})
+        return FileResponse(index, headers={"Cache-Control": "no-cache"})
+
+
+if os.getenv("STATIC_DIR") and Path(os.getenv("STATIC_DIR"), "index.html").is_file():
+    mount_frontend(app, os.getenv("STATIC_DIR"))

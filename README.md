@@ -2,7 +2,7 @@
 
 A full-stack system for tracking a job search: a React dashboard, a FastAPI backend, and a Chrome extension that captures jobs from LinkedIn and Indeed and logs applications automatically. Built to manage my own job search.
 
-**Stack:** Python · FastAPI · SQLAlchemy · SQLite · JWT auth · React (Vite) · Chrome Extension (Manifest V3) · pytest · node:test
+**Stack:** Python · FastAPI · SQLAlchemy · PostgreSQL / SQLite · JWT auth · React (Vite) · Chrome Extension (Manifest V3) · Docker · Render · pytest · node:test
 
 ![Job Tracker board with applications across Wishlist, Applied, Interview, Offer and Rejected](docs/board.png)
 
@@ -84,6 +84,25 @@ cd backend; pytest                              # API: auth, CRUD, ownership, ca
 node --test extension/test/parsers.test.js      # extension: URL canonicalisation and page parsing
 ```
 
+## Deployment
+
+In production the API also serves the built dashboard, so the whole app is **one Docker image at one URL** (no CORS). The [`Dockerfile`](Dockerfile) builds the React app in a Node stage and copies only the static files into a slim Python image that runs as a non-root user.
+
+It runs on **Render** (free web service) with a **Neon** Postgres database. Render's free disk is wiped on restart, so data lives in Postgres:
+
+1. Create a free Neon project and copy its connection string.
+2. On Render: **New → Blueprint →** this repo. [`render.yaml`](render.yaml) defines the service, health check and a generated `SECRET_KEY`; paste the Neon string as `DATABASE_URL`.
+3. Every push to `main` redeploys automatically.
+
+Run the production image locally:
+
+```powershell
+docker build -t job-tracker .
+docker run -p 8080:8000 -e SECRET_KEY=change-me job-tracker   # SQLite inside the container; pass DATABASE_URL for Postgres
+```
+
+To point the extension at the deployed app, open **Settings** in its popup and set both URLs to the Render address.
+
 ## API
 
 | Method | Path | Description |
@@ -122,5 +141,5 @@ node --test extension/test/parsers.test.js      # extension: URL canonicalisatio
 - Gmail import: read "Thanks for applying" emails to catch applications made on any site
 - Confirmation detection for Greenhouse, Lever and Workday application pages
 - Follow-up reminders and a calendar view
-- Alembic migrations and PostgreSQL in production; refresh tokens
+- Alembic migrations; refresh tokens; rate limiting on login
 - Front-end tests (Vitest + Testing Library) and CI with GitHub Actions

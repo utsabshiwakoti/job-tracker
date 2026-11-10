@@ -1,0 +1,14 @@
+# Render Blueprint: New > Blueprint > pick this repo. Render builds the Dockerfile and
+# redeploys on every push to main. DATABASE_URL is asked for once, during setup.
+services:
+  - type: web
+    name: job-tracker
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste the Neon connection string when prompted
+      - key: SECRET_KEY
+        generateValue: true # random, stored by Render, stays the same across restarts

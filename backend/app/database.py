@@ -3,12 +3,26 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./jobtracker.db")
+def _database_url() -> str:
+    url = os.getenv("DATABASE_URL", "sqlite:///./jobtracker.db")
+    # Hosts like Neon hand out "postgres://" or "postgresql://" URLs; tell SQLAlchemy to use
+    # the psycopg 3 driver we install rather than looking for the older psycopg2.
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
+DATABASE_URL = _database_url()
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
 # check_same_thread is a SQLite-only option; FastAPI serves requests from a thread pool.
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+# pool_pre_ping replaces connections a hosted Postgres closed while the app was idle.
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if IS_SQLITE else {},
+    pool_pre_ping=not IS_SQLITE,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 

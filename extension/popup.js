@@ -182,11 +182,18 @@ $('settings').addEventListener('submit', async (e) => {
   e.preventDefault()
   const apiBase = e.target.apiBase.value.trim().replace(/\/+$/, '')
   const appBase = e.target.appBase.value.trim().replace(/\/+$/, '')
-  // A deployed API is a new host: ask Chrome for permission to call it (must happen on a click).
-  const origin = `${new URL(apiBase).origin}/*`
-  if (!/^http:\/\/(localhost|127\.0\.0\.1):8000\/\*$/.test(origin)) {
-    const granted = await chrome.permissions.request({ origins: [origin] })
-    if (!granted) return message(`Permission to reach ${apiBase} was not granted.`, 'error')
+  // A deployed API/dashboard is a new host: ask Chrome for permission (must happen on a click).
+  const isLocal = (url) => /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(new URL(url).origin)
+  const origins = [...new Set([apiBase, appBase].filter((u) => !isLocal(u)).map((u) => `${new URL(u).origin}/*`))]
+  if (origins.length && !(await chrome.permissions.request({ origins }))) {
+    return message('Chrome permission to reach that site was not granted.', 'error')
+  }
+  // Read the login from the deployed dashboard too, like the manifest does for localhost.
+  await chrome.scripting.unregisterContentScripts({ ids: ['tracker-remote'] }).catch(() => {})
+  if (!isLocal(appBase)) {
+    await chrome.scripting.registerContentScripts([
+      { id: 'tracker-remote', matches: [`${new URL(appBase).origin}/*`], js: ['tracker.js'], runAt: 'document_idle' },
+    ])
   }
   await saveSettings({ apiBase, appBase })
   message('Settings saved.')
