@@ -14,6 +14,8 @@
 @media (prefers-color-scheme: dark) {
   :root { --bg: #1b2029; --text: #e8ebf0; --muted: #98a2b3; --border: #2d3441; --accent: #6c8cff; --error: #ff6b5c; }
 }
+/* `display: grid` on forms below would otherwise override the hidden attribute */
+[hidden] { display: none !important; }
 body { width: 320px; margin: 0; padding: 12px; display: grid; gap: 10px; }
 header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 header span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -32,7 +34,6 @@ button.link { border: none; padding: 0; background: none; color: var(--accent); 
 .small { font-size: 11px; word-break: break-all; }
 .note { margin: 0; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--border); font-size: 12px; }
 .note.warn { border-color: var(--warn); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.note.warn[hidden] { display: none; }
 #message { margin: 0; font-size: 13px; }
 #message.ok { color: var(--ok); }
 #message.error { color: var(--error); }

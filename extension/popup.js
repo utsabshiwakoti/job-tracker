@@ -20,18 +20,53 @@ async function refreshQueue() {
   show($('queue'), queue.length > 0)
 }
 
-// Ask the page's content script for the job. Unsupported sites (or tabs opened before the
-// extension was installed) have no content script, so fall back to the tab's title and URL.
+// Which content scripts handle a URL (mirrors manifest.json).
+function scriptsFor(url) {
+  const host = new URL(url).hostname
+  if (host === 'www.linkedin.com') return ['parsers.js', 'common.js', 'linkedin.js']
+  if (host.endsWith('.indeed.com')) return ['parsers.js', 'common.js', 'indeed.js']
+  return null
+}
+
+async function askContentScript(tabId) {
+  try {
+    return await chrome.tabs.sendMessage(tabId, { type: 'extract' }, { frameId: 0 })
+  } catch {
+    return null // no content script listening on this page
+  }
+}
+
+// Ask the page's content script for the job. A tab opened before the extension was installed
+// or reloaded has no content script yet, so inject it now (allowed by activeTab) and ask again.
+// Unsupported sites fall back to the tab's title and URL.
 async function detectJob(tab) {
   if (!/^https?:/.test(tab?.url || '')) return null
-  try {
-    const job = await chrome.tabs.sendMessage(tab.id, { type: 'extract' })
-    if (job) return job
-  } catch {
-    /* no content script on this page */
+  let job = await askContentScript(tab.id)
+  const files = scriptsFor(tab.url)
+  if (!job && files) {
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files })
+      job = await askContentScript(tab.id)
+    } catch {
+      /* page refused injection; use the fallback below */
+    }
   }
+  if (job) return job
+
   const host = new URL(tab.url).hostname.replace(/^www\./, '')
-  return { url: P.stripHash(tab.url), title: P.clean(tab.title), company: '', location: '', remote: false, source: host.slice(0, 50) }
+  const site = host === 'linkedin.com' ? 'linkedin' : host.endsWith('indeed.com') ? 'indeed' : null
+  const parsed =
+    site === 'linkedin' ? P.parseLinkedInTitle(tab.title) : site === 'indeed' ? P.parseIndeedTitle(tab.title) : null
+  const canonical =
+    site === 'linkedin' ? P.canonicalLinkedIn(tab.url) : site === 'indeed' ? P.canonicalIndeed(tab.url) : null
+  return {
+    url: canonical || P.stripHash(tab.url),
+    title: parsed?.title || P.clean(tab.title),
+    company: parsed?.company || '',
+    location: parsed?.location || '',
+    remote: false,
+    source: (site || host).slice(0, 50),
+  }
 }
 
 function fillJobForm(job) {
