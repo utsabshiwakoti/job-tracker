@@ -53,6 +53,24 @@ export const api = {
     await saveSettings({ token: access_token, email })
   },
   logout: () => chrome.storage.local.remove(['token', 'email']),
+
+  // Adopt a token from the dashboard, but only after the API confirms it is valid.
+  async adoptToken(token) {
+    const { apiBase, token: current } = await getSettings()
+    if (token === current) return false
+    let res
+    try {
+      res = await fetch(`${apiBase.replace(/\/+$/, '')}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch {
+      return false
+    }
+    if (!res.ok) return false
+    const user = await res.json()
+    await saveSettings({ token, email: user.email })
+    return true
+  },
   me: () => request('/auth/me'),
   capture: (job) => request('/applications/capture', { method: 'POST', body: job }),
   async lookup(url) {

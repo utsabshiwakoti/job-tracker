@@ -132,8 +132,13 @@ $('logout').addEventListener('click', async () => {
   render()
 })
 
-$('open').addEventListener('click', async () => {
-  chrome.tabs.create({ url: (await getSettings()).appBase })
+const openTracker = async () => chrome.tabs.create({ url: (await getSettings()).appBase })
+$('open').addEventListener('click', openTracker)
+$('openToLogin').addEventListener('click', openTracker)
+
+// If the dashboard hands over a login while the popup is open, switch views right away.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.token) render()
 })
 
 $('toggleSettings').addEventListener('click', () => show($('settings'), $('settings').hidden))

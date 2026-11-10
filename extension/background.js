@@ -78,6 +78,12 @@ async function handle(msg) {
     case 'flush':
       return flushQueue()
 
+    case 'syncToken': {
+      const adopted = await api.adoptToken(msg.token)
+      if (adopted) await flushQueue() // logged in now: send anything that was waiting
+      return { ok: adopted }
+    }
+
     default:
       return { ok: false, error: `Unknown message ${msg?.type}` }
   }

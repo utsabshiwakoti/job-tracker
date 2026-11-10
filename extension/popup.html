@@ -13,7 +13,10 @@
 
     <!-- Logged out -->
     <form id="login" hidden>
-      <p class="muted">Log in with your Job Tracker account.</p>
+      <p class="muted">
+        Already logged in to the tracker? <button id="openToLogin" type="button" class="link">Open it</button>
+        and this connects automatically. Or log in here:
+      </p>
       <label>Email <input name="email" type="email" required autocomplete="email" /></label>
       <label>Password <input name="password" type="password" required autocomplete="current-password" /></label>
       <button class="primary">Log in</button>
