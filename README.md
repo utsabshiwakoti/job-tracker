@@ -86,6 +86,8 @@ cd backend; pytest                              # API: auth, CRUD, ownership, ca
 node --test extension/test/parsers.test.js      # extension: URL canonicalisation and page parsing
 ```
 
+GitHub Actions runs both, plus the front-end lint and build, on every push (`.github/workflows/ci.yml`).
+
 ## Deployment
 
 In production the API also serves the built dashboard, so the whole app is **one Docker image at one URL** (no CORS). The [`Dockerfile`](Dockerfile) builds the React app in a Node stage and copies only the static files into a slim Python image that runs as a non-root user.
@@ -144,4 +146,4 @@ To point the extension at the deployed app, open **Settings** in its popup and s
 - Confirmation detection for Greenhouse, Lever and Workday application pages
 - Follow-up reminders and a calendar view
 - Alembic migrations; refresh tokens; rate limiting on login
-- Front-end tests (Vitest + Testing Library) and CI with GitHub Actions
+- Front-end tests (Vitest + Testing Library)
